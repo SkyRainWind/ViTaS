@@ -53,15 +53,11 @@ def main():
         choices=[
             "tactile_envs/Insertion-v0",
             "Door",
-            "Stack",
             "Lift",
             "LiftCan",
             "LiftCap",
-            "Wipe",
             "TwoArmPegInHole", # Two Arm Lift
             "TrueTwoArmPegInHole",
-            "PickPlace",
-            "TwoArmHandover",
             "HandManipulateBlockRotateZFixed-v1",
             "HandManipulateEggRotateFixed-v1",
             "HandManipulatePenRotateFixed-v1",
@@ -106,7 +102,7 @@ def main():
 
     # extra training settings
     parser.add_argument("--note", default="No special notes")
-    parser.add_argument("--structure", default="drqv2", choices=["drqv2", "ppo"])
+    parser.add_argument("--structure", default="ppo", choices=["drqv2", "ppo"])
 
     # contrastive learning settings
     parser.add_argument("--contrastive_limit", type=int, default=(int)(0)) # 0 is way better for training
@@ -114,7 +110,7 @@ def main():
     parser.add_argument("--alternation_loop", type=int, default=300000)
     parser.add_argument("--use_topk", type=bool, default=True)
     # parser.add_argument("--use_vae", type=bool, default=True)
-    parser.add_argument("--use_vae", type=str, default='False', choices=['True', 'False'])
+    parser.add_argument("--use_vae", type=str, default='True', choices=['True', 'False'])
     parser.add_argument("--topk", type=int, default=5)
     parser.add_argument("--image_only", type=bool, default=False)
     parser.add_argument("--augment", type=bool, default=False)
@@ -309,7 +305,6 @@ def main():
             )
         else:
             config.batch_size = 512
-            print('?')
             cnn_image = CNNEncoder(in_channels=3*config.frame_stack, num_tactiles=num_tactiles, encoder_dim=256, key='image', env_name=config.env, structure=config.structure)
             cnn_tactile = CNNEncoder(in_channels=3*config.frame_stack, num_tactiles=num_tactiles, encoder_dim=256, key='tactile', env_name=config.env, structure=config.structure)
             vtt_encoder = VTT(tactile_dim=6*32*32)
@@ -367,7 +362,6 @@ def main():
             )
     elif config.use_algo == 'poe':   # POE
         config.batch_size = 512
-        print('?')
         cnn_image = CNNEncoder(in_channels=3*config.frame_stack, num_tactiles=num_tactiles, encoder_dim=256, key='image', env_name=config.env, structure=config.structure)
         cnn_tactile = CNNEncoder(in_channels=3*config.frame_stack, num_tactiles=num_tactiles, encoder_dim=256, key='tactile', env_name=config.env, structure=config.structure)
         vtt_encoder = VTT(tactile_dim=6*32*32)
@@ -425,7 +419,6 @@ def main():
         )
     elif config.use_algo == 'concat':   # concatenation
         config.batch_size = 512
-        print('?')
         cnn_image = CNNEncoder(in_channels=3*config.frame_stack, num_tactiles=num_tactiles, encoder_dim=256, key='image', env_name=config.env, structure=config.structure)
         cnn_tactile = CNNEncoder(in_channels=3*config.frame_stack, num_tactiles=num_tactiles, encoder_dim=256, key='tactile', env_name=config.env, structure=config.structure)
         vtt_encoder = VTT(tactile_dim=6*32*32)

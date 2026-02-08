@@ -79,7 +79,7 @@ class Decoder(nn.Module):
 class CVAE(nn.Module):
     def __init__(self, latent_dim, in_channels, out_channels):
         super(CVAE, self).__init__()
-        self.projector_c = nn.Linear(81 * 64 * 2, latent_dim)
+        self.projector_c = nn.Linear(256 * 64 * 2, latent_dim)
         
         self.projector_mu = nn.Linear(512 * 4, latent_dim)
         self.projector_logvar = nn.Linear(512 * 4, latent_dim)
@@ -114,8 +114,8 @@ class CVAE(nn.Module):
                 recon_target = "image"):
         """
         vt_torch: "image" [batch_size, 12, 64, 64], "tactile1" [batch_size, 12, 32, 32]
-        encoded_image: [batch_size, 81 * 64]
-        encoded_tactile: [batch_size, 81 * 64]
+        encoded_image: [batch_size, 256 * 64]
+        encoded_tactile: [batch_size, 256 * 64]
         recon_target: "image", "tactile1", "both"
         """
         if recon_target == "image":

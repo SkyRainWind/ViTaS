@@ -147,6 +147,7 @@ def create_callbacks(config, model, num_tactiles, objects, holders):
         dir=config.wandb_dir,
         id=config.wandb_id,
         entity=config.wandb_entity,
+        mode="offline"
     )
     wandb.run.log_code("./models")
     logger = WandbLogger(

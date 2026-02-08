@@ -7,8 +7,8 @@ from utils.frame_stack import FrameStack
 
 import gymnasium as gym
 from gymnasium.wrappers.pixel_observation import PixelObservationWrapper
-from tactile_envs.utils.resize_dict import ResizeDict
-from tactile_envs.utils.add_tactile import AddTactile
+from utils.resize_dict import ResizeDict
+from utils.add_tactile import AddTactile
 
 import numpy as np
 

@@ -129,6 +129,7 @@ class CNNEncoder(nn.Module):
         self.env_name = env_name
         self.structure = structure
 
+        print('www ', self.structure)
         if(self.structure == 'drqv2'):
             # convnet.0/2/4/6.weight/bias
             self.convnet = nn.Sequential(nn.Conv2d(in_channels, 32, 3, stride=2),
@@ -148,6 +149,7 @@ class CNNEncoder(nn.Module):
                 )
             self.apply(weight_init)
         else:   # ppo
+            print('wtf ', in_channels)
             self.conv1 = nn.Conv2d(in_channels, encoder_dim//8, 4, stride=2, padding=1)
             self.conv2 = nn.Conv2d(encoder_dim//8, encoder_dim//4, 4, stride=2, padding=1)
             if key == 'image':
@@ -508,7 +510,7 @@ class CNNPolicy(ActorCriticCnnPolicy):
         log_prob = distribution.log_prob(actions)
         actions = actions.reshape((-1, *self.action_space.shape))
         return actions, values, log_prob
-class FUCKExtractor(BaseFeaturesExtractor):
+class VTTExtractor(BaseFeaturesExtractor):
     """
     Feature extract that flatten the input.
     Used as a placeholder when feature extraction is not needed.
@@ -577,78 +579,6 @@ class FUCKExtractor(BaseFeaturesExtractor):
         # print('flattened: ', flattened.shape);exit(0)
 
         return flattened
-class VTTExtractor(BaseFeaturesExtractor): # VTT
-    """
-    Feature extract that flatten the input.
-    Used as a placeholder when feature extraction is not needed.
-
-    :param observation_space:
-    """
-
-    def __init__(self, observation_space: gym.Space, vtt_encoder, cnn_image, cnn_tactile, dim_embeddings, vision_only_control, frame_stack, obses, image_only, augment, num_tactiles) -> None:
-        super().__init__(observation_space, dim_embeddings)
-        self.flatten = nn.Flatten()
-        self.vtt_encoder = vtt_encoder
-        self.cnn_image = cnn_image
-        self.cnn_tactile = cnn_tactile
-        self.num_tactiles = num_tactiles
-        
-        self.running_buffer = {}
-
-        self.vision_only_control = vision_only_control
-
-        self.frame_stack = frame_stack
-        self.obses_image = []
-        self.obses_tactile = []
-        self.image_only = image_only
-        self.augment = augment
-    
-        # self.encoder = CNNEncoder()
-
-    def forward(self, observations: torch.Tensor) -> torch.Tensor:
-        # print('?? ob ',observations['image'].shape)
-        # print('?? obb ',observations['tactile'].shape)
-        # if 'image' in observations and len(observations['image'].shape) == 5:
-        #     observations['image'] = observations['image'].permute(0, 2, 3, 1, 4)
-        #     observations['image'] = observations['image'].reshape((observations['image'].shape[0], observations['image'].shape[1], observations['image'].shape[2], -1))
-        # if 'tactile' in observations and len(observations['tactile'].shape) == 5:
-        #     observations['tactile'] = observations['tactile'].reshape((observations['tactile'].shape[0], -1, observations['tactile'].shape[3], observations['tactile'].shape[4]))
-        # if 'image' in observations and len(observations['image'].shape) == 5:
-        #     observations['image'] = observations['image'].permute(0, 1, 4, 2, 3)
-        # if 'tactile' in observations and len(observations['tactile'].shape) == 5:
-        #     observations['tactile'] = observations['tactile'].reshape((observations['tactile'].shape[0], observations['tactile'].shape[1], -1))
-        # image: [32, 9, 3, 64, 64] -> [32, 9, 3, 84, 84]
-        # tactile: [32, 9, 6, 32, 32] -> [32, 9, 6*32*32] -> [32, 9, 6]
-        # print("image shape: ", observations['image'].shape)
-        # print("tactile shape: ", observations['tactile'].shape)
-
-        vt_torch = vt_load(observations, frame_stack=self.frame_stack)
-        if torch.cuda.is_available():
-            for key in vt_torch:
-                vt_torch[key] = vt_torch[key].to('cuda')
-                # print('key, shape: ', key, vt_torch[key].shape)
-        # exit(0)
-        if(not self.image_only):
-            tactile_tokens_list = []
-            for i in range(1,self.num_tactiles+1):
-                tactile_tokens_list.append(self.forward(observations['tactile'+str(i)]))
-            # print('tactile_tokens shape: ', tactile_tokens.shape);exit(0)
-            # obs_tactile = self.cnn_tactile.get_embeddings(vt_torch, eval=False, use_tactile=not self.vision_only_control, key='tactile')
-        # print('vtt: ', obs_image.shape, obs_tactile.shape);exit(0)
-
-        # Get embeddings
-        # vt_torch = vt_load(observations, frame_stack=self.frame_stack)
-        # if torch.cuda.is_available():
-        #     for key in vt_torch:
-        #         vt_torch[key] = vt_torch[key].to('cuda')
-                # print('key, shape: ', key, vt_torch[key].shape)
-        # exit(0)
-        obs = self.vtt_encoder.get_embeddings(observations, eval=False, use_tactile=not self.vision_only_control, key='image')
-        # ppo: shape = [32, 64, 256] 
-        # drqv2: shape = [32, 81, 32]
-        # print('qq shape: ', obs.shape);exit(0)
-
-        return obs
 
 class VTTPolicy(ActorCriticCnnPolicy):
 
@@ -684,9 +614,7 @@ class VTTPolicy(ActorCriticCnnPolicy):
     ):
        
         self.augment = augment
-        # features_extractor_class = VTTExtractor
-        # features_extractor_kwargs = {'vtt_encoder': vtt_encoder,'cnn_image': cnn_image, 'cnn_tactile': cnn_tactile, 'dim_embeddings': dim_embeddings, 'vision_only_control': vision_only_control, 'frame_stack': frame_stack, 'obses': obses, 'image_only': image_only, 'augment': augment, 'num_tactiles': num_tactiles}
-        features_extractor_class = FUCKExtractor
+        features_extractor_class = VTTExtractor
         features_extractor_kwargs = {'cnn_image': cnn_image, 'cnn_tactile': cnn_tactile, 'dim_embeddings': dim_embeddings, 'vision_only_control': vision_only_control, 'frame_stack': frame_stack, 'obses': obses, 'image_only': image_only, 'augment': augment}
 
         ortho_init = False

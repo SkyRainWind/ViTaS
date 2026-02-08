@@ -18,10 +18,8 @@ We propose **Vi**sual **Ta**ctile **S**oft Fusion Contrastive Learning (ViTaS), 
 ## Installation
 Please install [`tactile_envs`](https://github.com/carlosferrazza/tactile_envs.git) first. Then, install the remaining dependencies:
 ```
-
-git submodule update --init
-git clone https://github.com/carlosferrazza/tactile_envs
-pip install -r requirements.txt
+cd third_party/tactile_envs && git submodule update --init && cd ../..
+<!-- cd third_party/tactile_envs && pip install -r requirements.txt && cd ../.. -->
 ```
 
 ## Training M3L
@@ -35,4 +33,4 @@ MUJOCO_GL='egl' python train.py --env tactile_envs/Insertion-v0 --vision_only_co
 ```
 
 # Acknowledgement
-Our code is generally built upon [M3L](https://github.com/carlosferrazza/M3L). The real-world experiments are conducted with the help of [Galaxea Dynamics](https://galaxea-dynamics.com/). We thank all these authors for their great contributions to the community.
+Our code is generally built upon [M3L](https://github.com/carlosferrazza/M3L) and [tactile_envs](https://github.com/carlosferrazza/tactile_envs). Tactile sensors used in real-world experiments are built with the help of [3D-ViTaC](https://binghao-huang.github.io/3D-ViTac/). We thank all these authors for their nicely open sourced code and their great contributions to the community.

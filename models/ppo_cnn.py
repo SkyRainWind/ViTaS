@@ -96,9 +96,9 @@ class PPO_CNN(OnPolicyAlgorithm):
         clip_range_vf: Union[None, float, Schedule] = None,
         normalize_advantage: bool = True,
         ent_coef: float = 0.0,
-        vae_coef: float = 10.0,
+        vae_coef: float = 0.01,
         vf_coef: float = 0.5,
-        contrastive_coef: float = 0.1, # TODO: use different coefficient for contrastive loss
+        contrastive_coef: float = 0.1,
         max_grad_norm: float = 0.5,
         use_sde: bool = False,
         sde_sample_freq: int = -1,
@@ -204,6 +204,7 @@ class PPO_CNN(OnPolicyAlgorithm):
         self.vae_coef = vae_coef
         self.use_vae = use_vae
         self.time_contrastive = time_contrastive
+        self.policy_kwargs = policy_kwargs
 
         if _init_setup_model:
             self.cnn_image = cnn_image
@@ -361,38 +362,6 @@ class PPO_CNN(OnPolicyAlgorithm):
                 policy_loss_2 = advantages * th.clamp(ratio, 1 - clip_range, 1 + clip_range)
                 policy_loss = -th.min(policy_loss_1, policy_loss_2).mean()
 
-                # ---------------- test parameters in infonceLoss require gradient
-                # for name, para in self.infonce.named_parameters():
-                #     if(para.requires_grad):
-                #         print('name: ', name, "require grad") 
-                # def getback(var_grad_fn):
-                #     print(var_grad_fn)
-                #     for n in var_grad_fn.next_functions:
-                #         if n[0]:
-                #             try:
-                #                 tensor = getattr(n[0], 'variable')
-                #                 print(n[0])
-                #                 print('Tensor with grad found, shape:', tensor.shape)
-                #                 print(' - gradient:', tensor.grad)
-                #                 print()
-                #             except AttributeError as e:
-                #                 getback(n[0])
-
-                # contrastive_loss = 0 
-                # obses = self.policy.features_extractor.obses
-                # lenn = 0
-                # for obs_image, obs_tactile in obses:
-                #     lenn += 1
-                #     if(lenn > 1):break
-                #     obs_image = obs_image.reshape(obs_image.shape[0], -1).to("cuda").detach()
-                #     obs_tactile = obs_tactile.reshape(obs_tactile.shape[0], -1).to("cuda").detach()
-                #     print('shape: ', obs_image.shape, obs_tactile.shape);exit(0)
-                #     contrastive_loss += self.infonce(obs_image, obs_tactile)
-                # contrastive_loss.backward()
-                # getback(contrastive_loss.grad_fn)
-                # exit(0)
-                # -------------------------------------------------------------
-
                 # calculate contrastive loss 
 
                 obses_image = th.cat(self.policy.features_extractor.obses_image, dim=0)
@@ -419,7 +388,7 @@ class PPO_CNN(OnPolicyAlgorithm):
                         if self.use_vae:
                             # get embedding
                             # vt_torch: ["image": [512, 12, 64, 64], "tactile1": [512, 12, 32, 32]]
-                            vt_torch = vt_load(observations, frame_stack=observations['tactile'].shape[1]//3)
+                            vt_torch = vt_load(observations, frame_stack=self.policy_kwargs['frame_stack'])
                             if th.cuda.is_available():
                                 for key in vt_torch:
                                     vt_torch[key] = vt_torch[key].to('cuda')
@@ -431,18 +400,11 @@ class PPO_CNN(OnPolicyAlgorithm):
                                 encoded_tactile = self.cnn_tactile.get_embeddings(vt_torch, eval=False, use_tactile=not self.image_only, key='tactile')
                                 encoded_tactile = encoded_tactile.reshape(encoded_tactile.shape[0], -1)
 
-                            # from utils.visualize import save_tensor_image, save_tensor_tactile
-                            # save_tensor_image(vt_torch["image"][0][9:, :, :], filename="test_image.png")
-                            # save_tensor_tactile(vt_torch["tactile1"][0][9:, :, :], filename="test_tactile.png")
-                            # save_tensor_image(vt_torch["image"][0][6:9, :, :], filename="test_image_prev.png")
-                            
                             recon, mu, log_var = self.vae(vt_torch, encoded_image, encoded_tactile, recon_target = "image")
                             vae_recon_loss, vae_kld_loss = \
                                 self.vae.loss_function(recon, vt_torch["image"][:, 9:, :, :], mu, log_var)
                             vae_loss = vae_recon_loss + vae_kld_loss
-                            # print(f"vae_recon_loss = {vae_recon_loss.item()}, vae_kld_loss = {vae_kld_loss.item()}") 
 
-                # print('cont = ', contrastive_loss)
                 # Logging
                 pg_losses.append(policy_loss.item())
                 clip_fraction = th.mean((th.abs(ratio - 1) > clip_range).float()).item()
