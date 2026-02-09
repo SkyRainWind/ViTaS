@@ -115,10 +115,11 @@ def main():
     parser.add_argument("--image_only", type=bool, default=False)
     parser.add_argument("--augment", type=bool, default=False)
     parser.add_argument("--is_gen_shape", type=bool, default=False) # is testing zero shot transfer for different shapes of insertion
-    parser.add_argument("--use_algo", type=str, default="cnn", choices=["drqv2", "cnn", "vtt", "mae", "poe", "concat"])
+    parser.add_argument("--use_algo", type=str, default="vitas", choices=["vitas", "vtt", "mae", "poe", "concat"])
     parser.add_argument("--use_time", type=bool, default=False)
 
     config = parser.parse_args()
+    if(config.use_algo == 'vitas'):config.use_algo = 'cnn'
     if(config.use_vae == 'True'):config.use_vae = True
     else: config.use_vae = False
 
